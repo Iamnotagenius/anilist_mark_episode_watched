@@ -101,13 +101,20 @@ def report(filename):
         if not match:
             return Result(Status.ERROR, 'Could not determine episode')
         episode = match.group(0)
-
+    try:
+        with open(os.path.join(os.path.dirname(filename), '.anilist.json')) as media_file:
+            media_id = json.load(media_file)['media_id']
+            pass
+    except FileNotFoundError:
+        return Result(Status.ERROR, 'Could not found mediaId')
+    except KeyError:
+        return Result(Status.ERROR, 'Media file does not have media_id')
     response = requests.post(
         ANILIST_BASE_URL,
         headers={'Authorization': f'Bearer {auth_result.message}' },
         json={
             'query': REPORT_PROGRESS_MUTATION,
-            'variables': { 'mediaId': 114236, 'progress': int(episode), }
+            'variables': { 'mediaId': media_id, 'progress': int(episode), }
         }
     )
     if response.status_code != 200:
