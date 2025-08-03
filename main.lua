@@ -17,6 +17,12 @@ local msg = require('mp.msg')
 local utils = require('mp.utils')
 local input = require('mp.input')
 
+local options = {
+    mark_threshold = 0.75,
+    affected_dir = '~/Videos/Anime'
+}
+require('mp.options').read_options(options, mp.get_script_name())
+
 ---@param result SubprocessResult
 ---@param error string
 ---@return Result|nil
@@ -56,8 +62,12 @@ local function run_py(args)
 end
 
 local function report_progress()
+    local match = string.match(mp.get_property('path'), mp.command_native{'normalize-path', options.affected_dir})
+    if match == nil then
+        return
+    end
     local percent = mp.get_property('time-pos') / mp.get_property('duration')
-    if percent < 0.75 then
+    if percent < options.mark_threshold then
         return
     end
     local result = run_py({'report', mp.get_property('path')})
@@ -73,11 +83,19 @@ local function report_progress()
     end
 end
 
-local function search_media()
-    local dir = utils.split_path(mp.get_property('path'))
-    local info = utils.file_info(utils.join_path(dir, '.anilist.json'))
-    if info ~= nil then
-        return
+local function search_media(event, force)
+    if event ~= nil and event.event == 'start-file' then
+        local match = string.match(mp.get_property('path'), mp.command_native{'normalize-path', options.affected_dir})
+        if match == nil then
+            return
+        end
+    end
+    if not force then
+        local dir = utils.split_path(mp.get_property('path'))
+        local info = utils.file_info(utils.join_path(dir, '.anilist.json'))
+        if info ~= nil then
+            return
+        end
     end
 
     local result = run_py {'guessit', mp.get_property('path')}
@@ -181,8 +199,10 @@ local function auth()
 end
 
 mp.add_hook('on_unload', 50, report_progress)
-mp.add_key_binding('ctrl+q', 'search_media', search_media)
 mp.add_key_binding('R', 'set_score', score)
+mp.register_script_message('anilist-change-media', function ()
+    search_media(nil, true)
+end)
 
 local success = auth()
 if success then
