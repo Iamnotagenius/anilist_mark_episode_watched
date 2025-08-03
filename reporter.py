@@ -37,6 +37,13 @@ query ($searchStr: String) {
   }
 }
 '''
+SET_SCORE_MUTATION = '''
+mutation SaveMediaListEntry($score: Float, $mediaId: Int) {
+  SaveMediaListEntry(score: $score, mediaId: $mediaId) {
+    score(format: POINT_10)
+  }
+}
+'''
 
 
 class Status(StrEnum):
@@ -63,6 +70,19 @@ class GuessitResult(Result):
 
 def open_token_tab():
     webbrowser.open_new_tab(f'https://anilist.co/api/v2/oauth/authorize?client_id={CLIENT_ID}&response_type=token')
+
+
+def get_media_id(filename):
+    try:
+        with open(os.path.join(os.path.dirname(filename), '.anilist.json')) as media_file:
+            media_id = json.load(media_file)['media_id']
+            pass
+    except FileNotFoundError:
+        return Result(Status.ERROR, 'Could not found mediaId')
+    except KeyError:
+        return Result(Status.ERROR, 'Media file does not have media_id')
+
+    return media_id
 
 
 def auth():
@@ -101,20 +121,15 @@ def report(filename):
         if not match:
             return Result(Status.ERROR, 'Could not determine episode')
         episode = match.group(0)
-    try:
-        with open(os.path.join(os.path.dirname(filename), '.anilist.json')) as media_file:
-            media_id = json.load(media_file)['media_id']
-            pass
-    except FileNotFoundError:
-        return Result(Status.ERROR, 'Could not found mediaId')
-    except KeyError:
-        return Result(Status.ERROR, 'Media file does not have media_id')
+    media_result = get_media_id(filename)
+    if isinstance(media_result, Result):
+        return media_result
     response = requests.post(
         ANILIST_BASE_URL,
         headers={'Authorization': f'Bearer {auth_result.message}' },
         json={
             'query': REPORT_PROGRESS_MUTATION,
-            'variables': { 'mediaId': media_id, 'progress': int(episode), }
+            'variables': { 'mediaId': media_result, 'progress': int(episode), }
         }
     )
     if response.status_code != 200:
@@ -140,8 +155,32 @@ def search(query):
         return Result(Status.ERROR, f'Got unexpected response from anilist: [{response.status_code}] {response.text}')
     return SearchResult(Status.OK, None, response.json()['data']['Page']['media'])
 
+
 def guessit_cmd(path):
     return GuessitResult(Status.OK, None, dict(guessit(path).items()))
+
+
+def set_score(filename, score):
+    auth_result = auth()
+    if auth_result.status != Status.OK:
+        return auth_result
+    media_result = get_media_id(filename)
+    if isinstance(media_result, Result):
+        return media_result
+    response = requests.post(
+        ANILIST_BASE_URL,
+        headers={'Authorization': f'Bearer {auth_result.message}'},
+        json={
+            'query': SET_SCORE_MUTATION,
+            'variables': {
+                'mediaId': media_result,
+                'score': score
+            }
+        }
+    )
+    if response.status_code != 200:
+        return Result(Status.ERROR, f'Got unexpected response from anilist: [{response.status_code}] {response.text}')
+    return Result(Status.OK)
 
 
 parser = argparse.ArgumentParser()
@@ -153,6 +192,9 @@ parser_search = subparsers.add_parser('search', help='Search for media entries')
 parser_search.add_argument('query', help='Search query')
 parser_guessit = subparsers.add_parser('guessit', help='Parse full filename using guessit')
 parser_guessit.add_argument('path', help='File path')
+parser_score = subparsers.add_parser('score', help='Rate an anime')
+parser_score.add_argument('filename', help='File path')
+parser_score.add_argument('score', type=float, help='A score')
 
 
 if __name__ == '__main__':
@@ -168,6 +210,8 @@ if __name__ == '__main__':
             result = search(args.query)
         case 'guessit':
             result = guessit_cmd(args.path)
+        case 'score':
+            result = set_score(args.filename, args.score)
             
     if result.status == Status.TOKEN_UPDATE_NEEDED and args.cmd == 'auth':
         pass

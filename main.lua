@@ -131,6 +131,21 @@ local function search_media()
     }
 end
 
+local function score()
+    local scores = {}
+    for i = 10, 1, -1 do
+        table.insert(scores, tostring(i))
+    end
+    input.select {
+        prompt = 'Choose score',
+        items = scores,
+        default_item = 1,
+        submit = function (id)
+            run_py {'score', mp.get_property('path'), tostring(10 - id + 1)}
+        end
+    }
+end
+
 local function auth()
     local result = run_py({'auth'})
     if result == nil then
@@ -155,8 +170,6 @@ local function auth()
                     return
                 end
                 f:close()
-
-                -- mp.osd_message('Access token saved')
             end,
             closed = function ()
                 mp.command_native({'script-binding', 'search_media'})
@@ -169,6 +182,7 @@ end
 
 mp.add_hook('on_unload', 50, report_progress)
 mp.add_key_binding('ctrl+q', 'search_media', search_media)
+mp.add_key_binding('R', 'set_score', score)
 
 local success = auth()
 if success then
