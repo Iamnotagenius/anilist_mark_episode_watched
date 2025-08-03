@@ -23,9 +23,10 @@ Example config, should be placed under `~/.config/mpv/script-opts/anilist_mark_e
 mark_threshold = 0.75 # a value from 0 to 1, where 0 is the beginning of an episode, 1 is the end. From which point episode is considered 'watched'
 affected_dir = ~/Videos/Anime # directory where animes are stored
 ```
-You can also change the key binding of set score in input.conf:
+You can also change the key bindings in input.conf:
 ```
-<key> script-binding set_score
+<key> script-binding set-anilist-score
+<key> script-binding browse-anilist
 ```
 
 ## Usage
@@ -42,6 +43,8 @@ and MPV will prompt you to submit an anime entry again.
 
 You can press `R` to set score for the anime you're currently watching, this will use
 10 point format.
+
+You can press `B` to open anime's Anilist page in your browser.
 
 On close, this script determines whether you watch a file in `affected_dir`
 and whether you passed `mark_threshold` and if you do,

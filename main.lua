@@ -164,6 +164,17 @@ local function score()
     }
 end
 
+local function browse()
+    local result = run_py {'browse', mp.get_property('path')}
+    if result == nil then
+        return
+    end
+    if result.status == 'error' then
+        mp.osd_message(('Could not open Anilist page: %s'):format(result.message))
+    end
+end
+
+
 local function auth()
     local result = run_py({'auth'})
     if result == nil then
@@ -199,7 +210,8 @@ local function auth()
 end
 
 mp.add_hook('on_unload', 50, report_progress)
-mp.add_key_binding('R', 'set_score', score)
+mp.add_key_binding('R', 'set-anilist-score', score)
+mp.add_key_binding('B', 'browse-anilist', browse)
 mp.register_script_message('anilist-change-media', function ()
     search_media(nil, true)
 end)

@@ -68,10 +68,6 @@ class GuessitResult(Result):
     matches: dict = field(default_factory=dict)
 
 
-def open_token_tab():
-    webbrowser.open_new_tab(f'https://anilist.co/api/v2/oauth/authorize?client_id={CLIENT_ID}&response_type=token')
-
-
 def get_media_id(filename):
     try:
         with open(os.path.join(os.path.dirname(filename), '.anilist.json')) as media_file:
@@ -183,6 +179,14 @@ def set_score(filename, score):
     return Result(Status.OK)
 
 
+def browse(filename):
+    media_result = get_media_id(filename)
+    if isinstance(media_result, Result):
+        return media_result
+    webbrowser.open_new_tab(f'https://anilist.co/anime/{media_result}')
+    return Result(Status.OK)
+
+
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='cmd', required=True)
 parser_auth = subparsers.add_parser('auth', help='Check and get access token from Anilist')
@@ -195,6 +199,8 @@ parser_guessit.add_argument('path', help='File path')
 parser_score = subparsers.add_parser('score', help='Rate an anime')
 parser_score.add_argument('filename', help='File path')
 parser_score.add_argument('score', type=float, help='A score')
+parser_browse = subparsers.add_parser('browse', help='Open anilist page')
+parser_browse.add_argument('filename', help='File path')
 
 
 if __name__ == '__main__':
@@ -212,8 +218,9 @@ if __name__ == '__main__':
             result = guessit_cmd(args.path)
         case 'score':
             result = set_score(args.filename, args.score)
+        case 'browse':
+            result = browse(args.filename)
             
     if result.status == Status.TOKEN_UPDATE_NEEDED and args.cmd == 'auth':
-        pass
-        # open_token_tab()
+        webbrowser.open_new_tab(f'https://anilist.co/api/v2/oauth/authorize?client_id={CLIENT_ID}&response_type=token')
     json.dump(asdict(result), sys.stdout)
