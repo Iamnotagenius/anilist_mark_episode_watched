@@ -37,6 +37,9 @@ If a media file does not exist, then MPV will prompt you to enter what anime the
 directory corresponds to. Once submitted, anime's media id will be stored in its
 directory and will be used for setting score and updating progress.
 
+If you want to change media id, you can run `script-message anilist-change-media`
+and MPV will prompt you to submit an anime entry again.
+
 You can press `R` to set score for the anime you're currently watching, this will use
 10 point format.
 
