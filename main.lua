@@ -107,13 +107,12 @@ local function search_media(event, force)
         prompt = 'Anime search >',
         default_text = result.matches.title,
         complete = function (query)
-            mp.osd_message(('Querying %q...'):format(query), 5)
             local search = run_py {'search', query}
             if search == nil then
                 return {}, 1
             end
             if search.status == 'error' then
-                mp.osd_message(('Error querying anilist: %s'):format(search.message))
+                mp.osd_message(('Error querying anilist: %s'):format(search.message), 5)
                 return {}, 1
             end
             local candidates = {}
@@ -170,7 +169,7 @@ local function browse()
         return
     end
     if result.status == 'error' then
-        mp.osd_message(('Could not open Anilist page: %s'):format(result.message))
+        mp.osd_message(('Could not open Anilist page: %s'):format(result.message), 5)
     end
 end
 
@@ -181,7 +180,7 @@ local function auth()
         return false
     end
     if result.status == 'error' then
-        mp.osd_message(('Error occured during token check: %s'):format(result.message))
+        mp.osd_message(('Error occured during token check: %s'):format(result.message), 5)
         return false
     elseif result.status == 'tokenupdate' then
         mp.osd_message(('Access token needs update: %s'):format(result.message), 5)
