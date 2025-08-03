@@ -126,7 +126,8 @@ local function search_media()
                 return
             end
             media_file:close()
-        end
+        end,
+        autoselect_completion = true,
     }
 end
 
