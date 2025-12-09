@@ -62,7 +62,8 @@ local function run_py(args)
 end
 
 local function report_progress()
-    if utils.file_info(mp.get_property('path')).is_dir then
+    local file_info = utils.file_info(mp.get_property('path'))
+    if not file_info or file_info.is_dir then
         return
     end
     local match = string.match(mp.get_property('path'), mp.command_native{'normalize-path', options.affected_dir})
@@ -87,7 +88,8 @@ local function report_progress()
 end
 
 local function search_media(event, force)
-    if utils.file_info(mp.get_property('path')).is_dir then
+    local file_info = utils.file_info(mp.get_property('path'))
+    if not file_info or file_info.is_dir then
         return
     end
     if event ~= nil and event.event == 'start-file' then
