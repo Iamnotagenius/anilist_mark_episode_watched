@@ -29,6 +29,16 @@ You can also change the key bindings in input.conf:
 <key> script-binding browse-anilist
 ```
 
+The script exposes the result of `guessit` matches under `user-data/anilist_mark_episode_watched/guessit/` properties.
+It also sets `user-data/anilist_mark_episode_watched/screenshot-template` for use with `screenshot-template` option.
+For example, you could write:
+```conf
+[anime_shots]
+profile-cond=get("user-data/anilist_mark_episode_watched/guessit/title")
+screenshot-template="%{user-data/anilist_mark_episode_watched/guessit/title}/%{user-data/anilist_mark_episode_watched/screenshot-template:shot}@%p#%n"
+```
+And get your screenshots saved neatly under a directory named after an anime title with season and episode in the name (in the format of `S1E1`).
+
 ## Usage
 On start, the script checks whether it has your access token and if it is valid.
 If not, it will open a browser tab where you can get the token.

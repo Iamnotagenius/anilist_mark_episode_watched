@@ -23,6 +23,26 @@ local options = {
 }
 require('mp.options').read_options(options, mp.get_script_name())
 
+local function set_property(property, value)
+    mp.set_property(('user-data/%s/%s'):format(mp.get_script_name(), property), value)
+end
+
+local function set_script_properties(matches)
+    local template = ''
+    if matches.season then
+        template = template .. 'S' .. matches.season
+    end
+    if matches.episode then
+        template = template .. 'E' .. matches.episode
+    end
+    if template:len() > 0 then
+        set_property('screenshot-template', template)
+    end
+    for key, value in pairs(matches) do
+        set_property(("guessit/%s"):format(key), value)
+    end
+end
+
 ---@param result SubprocessResult
 ---@param error string
 ---@return Result|nil
@@ -102,6 +122,11 @@ local function search_media(event, force)
         local dir = utils.split_path(mp.get_property('path'))
         local info = utils.file_info(utils.join_path(dir, '.anilist.json'))
         if info ~= nil then
+            local result = run_py {'guessit', mp.get_property('path')}
+            if result == nil then
+                return
+            end
+            set_script_properties(result.matches)
             return
         end
     end
@@ -110,6 +135,7 @@ local function search_media(event, force)
     if result == nil then
         return
     end
+    set_script_properties(result.matches)
     local to_id = {}
     input.get {
         prompt = 'Anime search >',
